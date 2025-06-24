@@ -99,7 +99,7 @@
         let nextAge = age + renewPeriod;
         if (nextAge > endAge) nextAge = endAge;
         let years = nextAge - age;
-        let periodTotal = premium * years;
+        let periodTotal = premium * years * 12;
         total += periodTotal;
 
         tbody.innerHTML += `<tr><td>${age}</td><td>${premium.toLocaleString()}원</td><td>${total.toLocaleString()}원</td></tr>`;
