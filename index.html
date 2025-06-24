@@ -1,0 +1,149 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>갱신형 보험료 예측기</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      padding: 20px;
+      max-width: 800px;
+      margin: auto;
+    }
+    h1 {
+      color: #0365DB;
+      text-align: center;
+    }
+    input, select, button {
+      margin: 5px;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .input-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      font-size: 14px;
+    }
+    th, td {
+      border: 1px solid #999;
+      padding: 6px 10px;
+      text-align: center;
+    }
+    footer {
+      margin-top: 40px;
+      font-size: 12px;
+      color: #666;
+      text-align: center;
+    }
+    #logo {
+      display: block;
+      margin: auto;
+      height: 50px;
+    }
+    canvas {
+      margin-top: 30px;
+    }
+  </style>
+</head>
+<body>
+  <img id="logo" src="AZ_HORIZONTAL_LOGO.png" alt="Company Logo" />
+  <h1>갱신형 보험료 예측기</h1>
+  <div class="input-container">
+    <input type="number" id="startAge" placeholder="현재 나이" />
+    <input type="number" id="renewPeriod" placeholder="갱신주기(년)" />
+    <input type="number" id="initialPremium" placeholder="초기 보험료" />
+    <input type="number" id="increaseRate" placeholder="갱신 시 인상률(%)" />
+    <input type="number" id="endAge" placeholder="종료 나이" />
+    <button onclick="calculate()">예측하기</button>
+    <button onclick="downloadPDF()">PDF로 저장</button>
+  </div>
+  <div id="output">
+    <table id="resultTable">
+      <thead>
+        <tr><th>갱신 나이</th><th>보험료</th><th>누적 납입액</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <canvas id="chart" height="200"></canvas>
+  </div>
+  <footer>해당 자료는, 갱신형 상품의 이해를 돕기 위한 자료이므로 자세한 사항은 보험 약관을 참조하시기 바랍니다.</footer>
+  <script>
+    function calculate() {
+      const startAge = parseInt(document.getElementById("startAge").value);
+      const renewPeriod = parseInt(document.getElementById("renewPeriod").value);
+      const initialPremium = parseFloat(document.getElementById("initialPremium").value);
+      const increaseRate = parseFloat(document.getElementById("increaseRate").value) / 100;
+      const endAge = parseInt(document.getElementById("endAge").value);
+      const tbody = document.querySelector("#resultTable tbody");
+      tbody.innerHTML = "";
+
+      let age = startAge;
+      let premium = initialPremium;
+      let total = 0;
+      let labels = [], data = [];
+
+      while (age < endAge) {
+        let nextAge = age + renewPeriod;
+        if (nextAge > endAge) nextAge = endAge;
+        let years = nextAge - age;
+        let periodTotal = premium * years;
+        total += periodTotal;
+
+        tbody.innerHTML += `<tr><td>${age}</td><td>${premium.toLocaleString()}원</td><td>${total.toLocaleString()}원</td></tr>`;
+        labels.push(age + "세");
+        data.push(premium);
+
+        premium *= (1 + increaseRate);
+        age += renewPeriod;
+      }
+
+      new Chart(document.getElementById("chart"), {
+        type: "line",
+        data: {
+          labels: labels,
+          datasets: [{
+            label: "보험료 추이",
+            data: data,
+            fill: false,
+            borderColor: "#0365DB",
+            tension: 0.3
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: {
+              beginAtZero: false,
+              ticks: { callback: value => value.toLocaleString() + "원" }
+            }
+          }
+        }
+      });
+    }
+
+    function downloadPDF() {
+      const element = document.body;
+      html2pdf()
+        .set({ filename: "insurance-premium-estimate.pdf", jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } })
+        .from(element)
+        .save();
+    }
+  </script>
+</body>
+</html>
